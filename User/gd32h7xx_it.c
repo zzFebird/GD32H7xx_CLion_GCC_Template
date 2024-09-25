@@ -67,12 +67,12 @@ void HardFault_Handler(void)
     \param[out] none
     \retval     none
 */
-void MemManage_Handler(void)
-{
-    /* if Memory Manage exception occurs, go to infinite loop */
-    while(1) {
-    }
-}
+//void MemManage_Handler(void)
+//{
+//    /* if Memory Manage exception occurs, go to infinite loop */
+//    while(1) {
+//    }
+//}
 
 /*!
     \brief      this function handles BusFault exception

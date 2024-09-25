@@ -2,7 +2,10 @@
 MEMORY
 {
   FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 3840K
-  RAM (xrw)       : ORIGIN = 0x24000000, LENGTH = 512K
+  SRAM (xrw)      : ORIGIN = 0x24000000, LENGTH = 832K
+  SDRAM (xrw)     : ORIGIN = 0XC0000000, LENGTH = 32M
+  ITCM (xrw)      : ORIGIN = 0x00000000, LENGTH = 64K
+  DTCM (xrw)      : ORIGIN = 0X20000000, LENGTH = 128K
 }
 
 ENTRY(Reset_Handler)
@@ -94,7 +97,7 @@ SECTIONS
     . = ALIGN(4);
     /* the symbol ��_edata�� will be defined at the data section end */
     _edata = .;
-  } >RAM AT> FLASH
+  } >SRAM AT> FLASH
 
   . = ALIGN(4);
   .bss :
@@ -109,18 +112,48 @@ SECTIONS
     /* the symbol ��_ebss�� will be defined at the bss section end */
     _ebss = .;
     __bss_end__ = _ebss;
-  } >RAM
+  } >SRAM
 
  . = ALIGN(8);
   PROVIDE ( end = _ebss );
   PROVIDE ( _end = _ebss );
 
-  .stack ORIGIN(RAM) + LENGTH(RAM) - __stack_size :
+  .stack ORIGIN(SRAM) + LENGTH(SRAM) - __stack_size :
   {
     PROVIDE( _heap_end = . ); 
     . = __stack_size;  
     PROVIDE( _sp = . ); 
-  } >RAM AT>RAM
+  } >SRAM AT>SRAM
+
+	.sdram_data (NOLOAD) : 
+	{ 
+	. = ALIGN(4); 
+	_sdram_data_begin = .; 
+	*(.sdram_data) 
+	*(.sdram_data*) 
+	. = ALIGN(4); 
+	_sdram_data_end = .; 
+	} >SDRAM
+
+	.itcm_data (NOLOAD) : 
+	{ 
+	. = ALIGN(4); 
+	_itcm_data_begin = .; 
+	*(.itcm_data) 
+	*(.itcm_data*) 
+	. = ALIGN(4); 
+	_itcm_data_end = .; 
+	} >ITCM
+
+	.dtcm_data (NOLOAD) : 
+	{ 
+	. = ALIGN(4); 
+	_dtcm_data_begin = .; 
+	*(.dtcm_data) 
+	*(.dtcm_data*) 
+	. = ALIGN(4); 
+	_dtcm_data_end = .; 
+	} >DTCM
 }
 
  /* input sections */

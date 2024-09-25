@@ -53,7 +53,7 @@ add_definitions(-DDEBUG -DGD32H7XX)
 
 include_directories(User)
 
-file(GLOB_RECURSE USER_SRC "User/*.*")
+file(GLOB_RECURSE USER_SRC "User/*.c")
 
 add_subdirectory(Drivers)
 add_subdirectory(Middlewares)
@@ -67,7 +67,7 @@ add_link_options(-T ${LINKER_SCRIPT})
 add_executable(${PROJECT_NAME}.elf ${USER_SRC} ${LINKER_SCRIPT})
 
 target_link_libraries(${PROJECT_NAME}.elf PUBLIC drivers)
-#target_link_libraries(${PROJECT_NAME}.elf PUBLIC middlewares)
+target_link_libraries(${PROJECT_NAME}.elf PUBLIC middlewares)
 
 set(HEX_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex)
 set(BIN_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin)
