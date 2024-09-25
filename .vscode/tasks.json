@@ -1,0 +1,54 @@
+{
+"version": "2.0.0",
+    "options": {
+        //指定命令执行所在路径
+        "cwd": "${workspaceRoot}"
+    },
+    "tasks": [
+        {
+            //生成cmake文件
+            "label": "cmake",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "-GNinja",
+                "-S .",
+                "-B build"
+            ],
+        },
+        {
+            //构建目标
+            "label": "build",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "./build"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "dependsOn": [
+                "cmake"
+            ],
+            "problemMatcher": []
+        },
+        {
+            //执行openocd命令，下载可执行文件到目标MCU
+            "type": "shell",
+            "label": "Build & Updatde",
+            "command": "openocd",
+            "args": [
+                "-f",
+                //配置文件绝对路径
+                "${workspaceRoot}/openocd_gd32h7xx.cfg",
+                "-c",
+                //编译生成的可执行文件绝对路径
+                "program ./build/gd32H7_gcc.elf verify reset exit"
+            ],
+            "group": "build",
+            "dependsOn": "build"
+        }
+    ]
+}

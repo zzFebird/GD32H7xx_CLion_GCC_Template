@@ -1,0 +1,26 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            //指定命令执行所在路径
+            "cwd": "${workspaceRoot}",
+            //可执行文件所在路径
+            "executable": "build/gd32H7_gcc.elf",
+            "name": "Debug Microcontroller",
+            "request": "launch",
+            "type": "cortex-debug",
+            //svd文件所在路径
+            "svdFile": "./GD32F10x_MD.svd",
+            //openocd命令
+            "servertype": "openocd",
+            //openocd配置文件所在相对路径
+            "configFiles": [
+            "./openocd_gd32h7xx.cfg ",
+            ]
+        }
+    ]
+}
+

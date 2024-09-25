@@ -64,33 +64,25 @@ int main(void)
     systick_config();
 
     /* enable the LED GPIO clock */
-    rcu_periph_clock_enable(RCU_GPIOC);
+    rcu_periph_clock_enable(RCU_GPIOF);
     /* configure LED GPIO pin */ 
-    gpio_mode_set(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12);
-    gpio_output_options_set(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_60MHZ, GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12);
+    gpio_mode_set(GPIOF, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLUP, GPIO_PIN_6);
+    gpio_output_options_set(GPIOF, GPIO_OTYPE_PP, GPIO_OSPEED_60MHZ, GPIO_PIN_6);
+    gpio_mode_set(GPIOF, GPIO_MODE_OUTPUT, GPIO_PUPD_PULLUP, GPIO_PIN_7);
+    gpio_output_options_set(GPIOF, GPIO_OTYPE_PP, GPIO_OSPEED_60MHZ, GPIO_PIN_7);
 
     /* reset LED GPIO pin */
-    gpio_bit_reset(GPIOC, GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11|GPIO_PIN_12);
+    gpio_bit_reset(GPIOF, GPIO_PIN_6|GPIO_PIN_7);
 
     while(1){
         /* turn on LED1, turn off LED4 */
-        gpio_bit_set(GPIOC, GPIO_PIN_9);
-        gpio_bit_reset(GPIOC, GPIO_PIN_12);
+        gpio_bit_set(GPIOF, GPIO_PIN_6);
+        gpio_bit_reset(GPIOF, GPIO_PIN_7);
         delay_1ms(500);
 
         /* turn on LED2, turn off LED1 */
-        gpio_bit_set(GPIOC, GPIO_PIN_10);
-        gpio_bit_reset(GPIOC, GPIO_PIN_9);
-        delay_1ms(500);
-
-        /* turn on LED3, turn off LED2 */
-        gpio_bit_set(GPIOC, GPIO_PIN_11);
-        gpio_bit_reset(GPIOC, GPIO_PIN_10);
-        delay_1ms(500);
-        
-        /* turn on LED4, turn off LED3 */
-        gpio_bit_set(GPIOC, GPIO_PIN_12);
-        gpio_bit_reset(GPIOC, GPIO_PIN_11);
+        gpio_bit_set(GPIOF, GPIO_PIN_7);
+        gpio_bit_reset(GPIOF, GPIO_PIN_6);
         delay_1ms(500);
     }
 }
