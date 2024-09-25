@@ -1,5 +1,3 @@
-#此文件从模板自动生成! 请勿更改!
-#改自STM32的cmake，只改了包含目录，其它配置没动
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_VERSION 1)
 cmake_minimum_required(VERSION 3.25)
@@ -50,14 +48,15 @@ else ()
     add_compile_options(-Og -g)
 endif ()
 
-#把头文件包含一下
-include_directories(Core/Inc Drivers/Peripherals/Inc Drivers/CMSIS/GD/GD32H7xx/Include Drivers/CMSIS/Include)
-
 #add_definitions(-DDEBUG -DUSE_HAL_DRIVER -DSTM32F103xB)
 add_definitions(-DDEBUG -DGD32H7XX)
 
+include_directories(User)
 
-file(GLOB_RECURSE SOURCES "Core/*.*" "Drivers/*.*")
+file(GLOB_RECURSE USER_SRC "User/*.*")
+
+add_subdirectory(Drivers)
+add_subdirectory(Middlewares)
 
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/gd32h7xx_flash.ld)
 
@@ -65,7 +64,10 @@ add_link_options(-Wl,-gc-sections,--print-memory-usage,-Map=${PROJECT_BINARY_DIR
 add_link_options(-mcpu=cortex-m3 -mthumb -mthumb-interwork)
 add_link_options(-T ${LINKER_SCRIPT})
 
-add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
+add_executable(${PROJECT_NAME}.elf ${USER_SRC} ${LINKER_SCRIPT})
+
+target_link_libraries(${PROJECT_NAME}.elf PUBLIC drivers)
+#target_link_libraries(${PROJECT_NAME}.elf PUBLIC middlewares)
 
 set(HEX_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.hex)
 set(BIN_FILE ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.bin)
