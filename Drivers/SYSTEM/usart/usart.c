@@ -22,7 +22,7 @@
 /******************************************************************************************/
 /* 加入以下代码, 支持printf函数, 而不需要选择use MicroLIB */
 
-#if 1
+#if   defined ( __CC_ARM )
 
 #if (__ARMCC_VERSION >= 6010050)            /* 使用AC6编译器时 */
 __asm(".global __use_no_semihosting\n\t");  /* 声明不使用半主机模式 */
@@ -71,6 +71,18 @@ int fputc(int ch, FILE *f)
     usart_data_transmit(USART_UX, (uint8_t)ch);                     /* 将要发送的字符 ch 写入到TDATA寄存器 */  
     return ch;
 }
+
+#elif defined ( __GNUC__ )
+int _write(int fd, char *ptr, int len)  
+{
+    int cnt = len;
+    while (cnt--) {
+        while (RESET == usart_flag_get(USART_UX, USART_FLAG_TC));       /* 等待上一个字符发送完成 */
+        usart_data_transmit(USART_UX, (uint8_t)*ptr++);                 /* 将要发送的字符 ch 写入到TDATA寄存器 */  
+    }
+    return len;
+}
+
 #endif
 
 /******************************************************************************************/
