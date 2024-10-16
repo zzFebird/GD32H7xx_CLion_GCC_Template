@@ -33,7 +33,12 @@ OF SUCH DAMAGE.
 */
 
 #include "gd32h7xx_it.h"
+#include "drv_usb_hw.h"
+#include "drv_usbd_int.h"
 
+extern usb_core_driver cdc_acm;
+
+static void resume_mcu_clk(void);
 
 /*!
     \brief      this function handles NMI exception
@@ -147,4 +152,93 @@ void PendSV_Handler(void)
 */
 void SysTick_Handler(void)
 {
+}
+
+/*!
+    \brief      this function handles USBHS interrupt
+    \param[in]  none
+    \param[out] none
+    \retval     none
+*/
+
+void USBHS0_IRQHandler (void)
+{
+    usbd_isr (&cdc_acm);
+}
+
+/*!
+    \brief      this function handles USBHS wakeup interrupt request.
+    \param[in]  none
+    \param[out] none
+    \retval     none
+*/
+
+void USBHS0_WKUP_IRQHandler(void)
+{
+    if (cdc_acm.bp.low_power) {
+        resume_mcu_clk();
+
+        #ifndef USE_IRC48M
+
+        #else
+            /* enable IRC48M clock */
+            rcu_osci_on(RCU_IRC48M);
+
+            /* wait till IRC48M is ready */
+            while (SUCCESS != rcu_osci_stab_wait(RCU_IRC48M)) {
+            }
+
+            rcu_ck48m_clock_config(RCU_CK48MSRC_IRC48M);
+        #endif /* USE_IRC48M */
+
+        rcu_periph_clock_enable(RCU_USBHS0);
+
+        usb_clock_active(&cdc_acm);
+    }
+
+    exti_interrupt_flag_clear(EXTI_31);
+}
+
+/*!
+    \brief      resume MCU clock
+    \param[in]  none
+    \param[out] none
+    \retval     none
+*/
+static void resume_mcu_clk(void)
+{
+    /* enable HXTAL */
+    rcu_osci_on(RCU_HXTAL);
+
+    /* wait till HXTAL is ready */
+    while(RESET == rcu_flag_get(RCU_FLAG_HXTALSTB)){
+    }
+
+    /* enable PLL1 */
+    rcu_osci_on(RCU_PLL1_CK);
+
+    /* wait till PLL1 is ready */
+    while(RESET == rcu_flag_get(RCU_FLAG_PLL1STB)){
+    }
+
+    /* enable PLL2 */
+    rcu_osci_on(RCU_PLL2_CK);
+
+    /* wait till PLL2 is ready */
+    while(RESET == rcu_flag_get(RCU_FLAG_PLL2STB)){
+    }
+    
+    /* enable PLL */
+    rcu_osci_on(RCU_PLL0_CK);
+
+    /* wait till PLL is ready */
+    while(RESET == rcu_flag_get(RCU_FLAG_PLL0STB)){
+    }
+
+    /* select PLL as system clock source */
+    rcu_system_clock_source_config(RCU_CKSYSSRC_PLL0P);
+
+    /* wait till PLL is used as system clock source */
+    while(RCU_SCSS_PLL0P != rcu_system_clock_source_get()){
+    }
 }

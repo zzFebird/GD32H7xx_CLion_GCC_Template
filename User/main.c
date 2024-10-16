@@ -2,7 +2,7 @@
  ****************************************************************************************************
  * @file        main.c
  * @version     V1.0
- * @brief       FATFS 实验
+ * @brief       USB虚拟串口(Slave) 实验
  ****************************************************************************************************
  * @attention   Waiken-Smart 慧勤智远
  *
@@ -19,16 +19,18 @@
 #include "./BSP/SDRAM/sdram.h"
 #include "./BSP/KEY/key.h"
 #include "./MALLOC/malloc.h"
-#include "./BSP/SDIO/sd_conf.h"
-#include "./BSP/NORFLASH/norflash.h"
-#include "./FATFS/exfuns/exfuns.h"
+#include "drv_usb_hw.h"
+#include "cdc_acm_core.h"
+
+
+usb_core_driver cdc_acm;
 
 
 int main(void)
 {
-    uint32_t total, free;
-    uint8_t t = 0;
-    uint8_t res = 0;
+    uint16_t len;
+    uint16_t times = 0;
+    uint8_t usbstatus = 0;
   
     sys_cache_enable();                     /* 使能CPU cache */
     delay_init(600);                        /* 延时初始化 */
@@ -36,52 +38,70 @@ int main(void)
     led_init();							    /* 初始化LED */   
     mpu_memory_protection();                /* 保护相关存储区域 */
     sdram_init(EXMC_SDRAM_DEVICE0);         /* 初始化SDRAM */
-    key_init();                             /* 初始化按键 */
-    norflash_init();                        /* 初始化NORFLASH */
 
     my_mem_init(SRAMIN);                    /* 初始化内部SRAM内存池 */
     my_mem_init(SRAMEX);                    /* 初始化外部SDRAM内存池 */
 
-    exfuns_init();                          /* 为fatfs相关变量申请内存 */
-    res = f_mount(fs[1], "1:", 1);          /* 挂载FLASH */
-    if (res == 0X0D)                        /* FLASH磁盘,FAT文件系统错误,重新格式化FLASH */
-    {
-        res = f_mkfs("1:", 0, 0, FF_MAX_SS);                                         /* 格式化FLASH,1:,盘符;0,使用默认格式化参数 */
-        if (res == 0)
-        {
-            f_setlabel((const TCHAR *)"1:WKS");                                      /* 设置Flash磁盘的名字为：WKS */
-        }
-        else 
-        {
-        }
+    usb_rcu_config();                                                      /* 配置USB时钟 */
 
-        delay_ms(1000);
-    }
+    usb_para_init (&cdc_acm, USBHS0, USB_SPEED_FULL);                      /* 配置USB参数，USBHS0使用全速模式 */
 
-    FIL fp;
-    char *str = "Hello, world!\n";
-    int cnt;
-    res = f_open(&fp, "1:/test.txt", FA_CREATE_ALWAYS | FA_WRITE);
-    if (res == FR_OK) {
-        res = f_write(&fp, str, 5, &cnt);
-        if (res == FR_OK) {
-            printf("%d bytes written\n", cnt);
-        }
-        f_close(&fp);
-    } else {
-        printf("file open failed %d\n", res);
-    }
+    usbd_init (&cdc_acm, &cdc_desc, &cdc_class);                           /* 初始化USB设备并添加类 */
 
+    usb_intr_config();                                                     /* 配置USB中断 */
+    delay_ms(1000);
+    
     while (1)
     {        
-        t++;
-        delay_ms(10);
-        
-        if (t == 20)
+        if (usbstatus != cdc_acm.dev.cur_status)    /* USB连接状态发生了改变 */
         {
-            t = 0;            
-            LED0_TOGGLE();                                      /* LED0闪烁 */
-        }         
+            usbstatus = cdc_acm.dev.cur_status;     /* 记录新的状态 */
+
+            if (USBD_CONFIGURED == usbstatus)
+            {
+                usbd_ep_recev (&cdc_acm, CDC_DATA_OUT_EP, g_usb_rx_buffer, USB_USART_REC_LEN); /* 连接成功后端点准备接收数据 */
+                printf("USB Connected\n"); /* 提示USB连接成功 */
+                LED1(0);                                                         /* LED1亮 */
+            }
+            else
+            {
+                printf("USB disConnected\n"); /* 提示USB断开 */
+                LED1(1);                                                         /* LED1灭 */
+            }
+        }
+        if (USBD_CONFIGURED == cdc_acm.dev.cur_status)
+        {
+            if (g_usb_usart_rx_sta & 0x8000)
+            {
+                len = g_usb_usart_rx_sta & 0x3FFF;                               /* 得到此次接收到的数据长度 */
+                usb_printf("\r\n您发送的消息长度为:%d\r\n\r\n", len);
+                cdc_vcp_data_tx(g_usb_usart_rx_buffer, len);
+                usb_printf("\r\n\r\n");                                          /* 插入换行 */
+                g_usb_usart_rx_sta = 0;
+            }
+            else
+            {
+                times++;
+
+                if (times % 5000 == 0)
+                {
+                    usb_printf("\r\n慧勤智远 GD32H757ZMT6小系统板USB虚拟串口实验\r\n");
+                    usb_printf("慧勤智远@Waiken-Smart\r\n\r\n\r\n");
+                }
+
+                if (times % 200 == 0)
+                {
+                    usb_printf("请输入数据,以回车键结束\r\n");
+                }
+
+                if (times % 30 == 0)
+                {
+                    LED0_TOGGLE();  /* LED0闪烁,提示系统正在运行 */
+                }
+                
+                delay_ms(10);
+            }
+        }    
     }
 }
 

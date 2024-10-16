@@ -115,7 +115,7 @@ uint8_t mf_read(uint16_t len)
 
     for (i = 0; i < len / 512; i++)
     {
-        res = f_read(fattester.file, fattester.fatbuf, 512, &br);
+        res = f_read(fattester.file, fattester.fatbuf, 512, (UINT*)&br);
 
         if (res)
         {
@@ -132,7 +132,7 @@ uint8_t mf_read(uint16_t len)
 
     if (len % 512)
     {
-        res = f_read(fattester.file, fattester.fatbuf, len % 512, &br);
+        res = f_read(fattester.file, fattester.fatbuf, len % 512, (UINT*)&br);
 
         if (res)    /* 读数据出错了 */
         {
@@ -165,7 +165,7 @@ uint8_t mf_write(uint8_t *pdata, uint16_t len)
 
     printf("\r\nBegin Write fattester.file...\r\n");
     printf("Write data len:%d\r\n", len);
-    res = f_write(fattester.file, pdata, len, &bw);
+    res = f_write(fattester.file, pdata, len, (UINT*)&bw);
 
     if (res)
     {

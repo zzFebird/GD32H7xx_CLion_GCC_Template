@@ -1,5 +1,9 @@
 {
     "files.associations": {
-        "key.h": "c"
-    }
+        "key.h": "c",
+        "usbd_core.h": "c",
+        "drv_usb_hw.h": "c"
+    },
+    "cortex-debug.variableUseNaturalFormat": false,
+    "files.encoding": "gb18030"
 }

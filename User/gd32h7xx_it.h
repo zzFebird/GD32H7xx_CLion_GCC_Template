@@ -57,4 +57,9 @@ void PendSV_Handler(void);
 /* this function handles SysTick exception */
 void SysTick_Handler(void);
 
+/* this function handles USBHS wakeup interrupt handler */
+void USBHS_WKUP_IRQHandler(void);
+/* this function handles USBHS IRQ Handler */
+void USBHS_IRQHandler(void);
+
 #endif /* GD32H7XX_IT_H */
