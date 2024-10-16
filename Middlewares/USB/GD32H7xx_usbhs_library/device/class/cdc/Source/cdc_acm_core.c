@@ -33,33 +33,9 @@ OF SUCH DAMAGE.
 */
 
 #include "cdc_acm_core.h"
-#include "./SYSTEM/usart/usart.h"
-#include "./SYSTEM/delay/delay.h"
-#include "string.h"
-#include "stdarg.h"
-#include "stdio.h"
 
 #define USBD_VID                          0x28E9U
 #define USBD_PID                          0x018AU
-
-extern usb_core_driver cdc_acm;
-
-/* usb_printf发送缓冲区, 用于vsprintf */
-uint8_t g_usb_usart_printf_buffer[USB_USART_REC_LEN];
-
-/* USB接收的数据缓冲区,最大USART_REC_LEN个字节 */
-uint8_t g_usb_rx_buffer[USB_USART_REC_LEN];
-
-/* 用类似串口0接收数据的方法,来处理USB虚拟串口接收到的数据 */
-uint8_t g_usb_usart_rx_buffer[USB_USART_REC_LEN];       /* 接收缓冲,最大USART_REC_LEN个字节 */
-
-
-/* 接收状态
- * bit15   , 接收完成标志
- * bit14   , 接收到0x0d
- * bit13~0 , 接收到的有效字节数目
- */
-uint16_t g_usb_usart_rx_sta=0;  /* 接收状态标记 */
 
 /* note:it should use the C99 standard when compiling the below codes */
 /* USB standard device descriptor */
@@ -288,7 +264,7 @@ usb_class_core cdc_class = {
     .deinit    = cdc_acm_deinit,
     .req_proc  = cdc_acm_req,
 
-    .ctlx_out  = cdc_ctlx_out,
+    .ctlx_out = cdc_ctlx_out,
     .data_in   = cdc_acm_in,
     .data_out  = cdc_acm_out
 };
@@ -373,10 +349,10 @@ static uint8_t cdc_acm_init(usb_dev *udev, uint8_t config_index)
     cdc_handler.receive_length = 0U;
 
     cdc_handler.line_coding = (acm_line) {
-        .dwDTERate   = 115200,                /* 波特率 */
-        .bCharFormat = 0,                     /* 停止位,默认1位 */
-        .bParityType = 0,                     /* 校验位,默认无 */
-        .bDataBits   = 0x08                   /* 数据位,默认8位 */
+        .dwDTERate   = 115200,
+        .bCharFormat = 0,
+        .bParityType = 0,
+        .bDataBits   = 0x08
     };
 
     udev->dev.class_data[CDC_COM_INTERFACE] = (void *)&cdc_handler;
@@ -534,93 +510,5 @@ static uint8_t cdc_acm_out(usb_dev *udev, uint8_t ep_num)
     cdc->packet_receive = 1U;
     cdc->receive_length = ((usb_core_driver *)udev)->dev.transc_out[ep_num].xfer_count;
 
-    cdc_vcp_data_rx(g_usb_rx_buffer, cdc->receive_length);
-
-    usbd_ep_recev (udev, CDC_DATA_OUT_EP, g_usb_rx_buffer, USB_USART_REC_LEN);
-  
     return USBD_OK;
 }
-
-/**
- * @brief       处理从 USB 虚拟串口接收到的数据
- * @param       buf     : 接收数据缓冲区
- * @param       Len     : 接收到的数据长度
- * @retval      无
- */
-void cdc_vcp_data_rx (uint8_t *buf, uint32_t Len)
-{
-    uint8_t i;
-    uint8_t res;
-
-    for (i = 0; i < Len; i++)
-    {
-        res = buf[i];
-
-        if ((g_usb_usart_rx_sta & 0x8000) == 0)     /* 接收未完成 */
-        {
-            if (g_usb_usart_rx_sta & 0x4000)        /* 接收到了0x0D */
-            {
-                if (res != 0x0a)
-                {
-                    g_usb_usart_rx_sta = 0;         /* 接收错误,重新开始 */
-                }
-                else
-                {
-                    g_usb_usart_rx_sta |= 0x8000;   /* 接收完成了 */
-                }
-            }
-            else    /* 还没收到0X0D */
-            {
-                if (res == 0x0d)
-                {
-                    g_usb_usart_rx_sta |= 0x4000;   /* 标记接收到了0X0D */
-                }
-                else
-                {
-                    g_usb_usart_rx_buffer[g_usb_usart_rx_sta & 0X3FFF] = res;
-                    g_usb_usart_rx_sta++;
-
-                    if (g_usb_usart_rx_sta > (USB_USART_REC_LEN - 1))
-                    {
-                        g_usb_usart_rx_sta = 0;     /* 接收数据溢出 重新开始接收 */
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * @brief       通过 USB 发送数据
- * @param       data     : 要发送的数据缓冲区
- * @param       Len      : 数据长度
- * @retval      无
- */
-void cdc_vcp_data_tx(uint8_t *data, uint32_t Len)
-{
-    usbd_ep_send (&cdc_acm, CDC_DATA_IN_EP, data, Len);
-    delay_ms(10);   /* 等待一定时间再进行下一次发送 */
-}
-
-/**
- * @brief       USB虚拟串口的printf函数
- * @note        通过USB VCP实现printf输出
- *              确保一次发送数据长度不超过USB_USART_REC_LEN字节
- * @param       格式化输出
- * @retval      无
- */
-void usb_printf(char *fmt, ...)
-{
-    uint16_t i;
-    va_list ap;
-    va_start(ap, fmt);
-    vsprintf((char *)g_usb_usart_printf_buffer, fmt, ap);
-    va_end(ap);
-    i = strlen((const char *)g_usb_usart_printf_buffer);    /* 此次发送数据的长度 */
-    cdc_vcp_data_tx(g_usb_usart_printf_buffer, i);          /* 发送数据 */          
-}
-
-
-
-
-

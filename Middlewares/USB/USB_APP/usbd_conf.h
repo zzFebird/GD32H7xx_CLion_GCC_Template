@@ -37,31 +37,26 @@ OF SUCH DAMAGE.
 
 #include "usb_conf.h"
 
-#define USBD_CFG_MAX_NUM                    1U
-#define USBD_ITF_MAX_NUM                    1U
+#define USBD_CFG_MAX_NUM                1U
+#define USBD_ITF_MAX_NUM                1U
+#define USB_STR_DESC_MAX_SIZE           64U
 
-#define CDC_COM_INTERFACE                   0U
+#define USBD_MSC_INTERFACE              0U
 
-#define USB_STR_DESC_MAX_SIZE               255U
+/* class layer parameter */
+#define MSC_IN_EP                       EP1_IN
+#define MSC_OUT_EP                      EP1_OUT
 
-#define CDC_DATA_IN_EP                      EP1_IN  /* EP1 for data IN */
-#define CDC_DATA_OUT_EP                     EP1_OUT /* EP1 for data OUT */
-#define CDC_CMD_EP                          EP2_IN  /* EP2 for CDC commands */
+#ifdef USE_USB_HS  
+    #define MSC_DATA_PACKET_SIZE        512U
+#else  /*USE_USB_FS*/
+    #define MSC_DATA_PACKET_SIZE        64U
+#endif
 
-#define USB_STRING_COUNT                    4U
+#define MSC_MEDIA_PACKET_SIZE           8192U           /* 定义包大小为8192字节 */
 
-#define USB_CDC_CMD_PACKET_SIZE             8U    /* control endpoint packet size */
+#define MEM_LUN_NUM                     2               /* 最大支持的设备数, 最大 MEM_LUN_NUM 个 */
 
-#define APP_RX_DATA_SIZE                    2048U /* total size of IN buffer: 
-                                                     APP_RX_DATA_SIZE*8 / MAX_BAUDARATE * 1000 should be > CDC_IN_FRAME_INTERVAL*8 */
-
-/* CDC Endpoints parameters: you can fine tune these values depending on the needed baudrates and performance. */
-#ifdef USE_USB_HS
-    #define USB_CDC_DATA_PACKET_SIZE        512U  /* endpoint IN & OUT Packet size */
-    #define CDC_IN_FRAME_INTERVAL           40U   /* number of micro-frames between IN transfers */
-#else
-    #define USB_CDC_DATA_PACKET_SIZE        64U   /* endpoint IN & OUT Packet size */
-    #define CDC_IN_FRAME_INTERVAL           5U    /* number of frames between IN transfers */
-#endif /* USE_USB_HS */
+#define USB_STRING_COUNT                4U
 
 #endif /* __USBD_CONF_H */

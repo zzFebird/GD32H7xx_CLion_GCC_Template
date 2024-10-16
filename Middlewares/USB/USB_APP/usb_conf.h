@@ -121,7 +121,7 @@ OF SUCH DAMAGE.
 //#define USB_INTERNAL_DMA_ENABLED
 //#define USB_DEDICATED_EP1_ENABLED
 
-#define USB_SOF_OUTPUT                        0U
+#define USB_SOF_OUTPUT                        1U
 #define USB_LOW_POWER                         0U
 
 /* if uncomment it, need jump to USB JP */

@@ -36,7 +36,7 @@ OF SUCH DAMAGE.
 #include "drv_usb_hw.h"
 #include "drv_usbd_int.h"
 
-extern usb_core_driver cdc_acm;
+extern usb_core_driver msc_udisk;
 
 static void resume_mcu_clk(void);
 
@@ -163,7 +163,7 @@ void SysTick_Handler(void)
 
 void USBHS0_IRQHandler (void)
 {
-    usbd_isr (&cdc_acm);
+    usbd_isr (&msc_udisk);
 }
 
 /*!
@@ -175,7 +175,7 @@ void USBHS0_IRQHandler (void)
 
 void USBHS0_WKUP_IRQHandler(void)
 {
-    if (cdc_acm.bp.low_power) {
+    if (msc_udisk.bp.low_power) {
         resume_mcu_clk();
 
         #ifndef USE_IRC48M
@@ -193,7 +193,7 @@ void USBHS0_WKUP_IRQHandler(void)
 
         rcu_periph_clock_enable(RCU_USBHS0);
 
-        usb_clock_active(&cdc_acm);
+        usb_clock_active(&msc_udisk);
     }
 
     exti_interrupt_flag_clear(EXTI_31);

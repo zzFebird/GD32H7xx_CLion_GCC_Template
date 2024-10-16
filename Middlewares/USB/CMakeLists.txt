@@ -29,7 +29,7 @@ target_include_directories(usb PUBLIC
     USB_APP
 )
 
-set(usb_class "cdc")
+set(usb_class "msc")
 
 if (usb_class STREQUAL "cdc")
     target_sources(usb PRIVATE

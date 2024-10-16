@@ -40,18 +40,12 @@ OF SUCH DAMAGE.
 
 #define USB_CDC_RX_LEN      USB_CDC_DATA_PACKET_SIZE
 
-#define USB_USART_REC_LEN       200     /* USB串口接收缓冲区最大字节数 */
-
-extern uint8_t  g_usb_rx_buffer[USB_USART_REC_LEN];         /* 接收缓冲,最大USB_USART_REC_LEN个字节.末字节为换行符 */
-extern uint8_t  g_usb_usart_rx_buffer[USB_USART_REC_LEN];   /* 接收缓冲,最大USB_USART_REC_LEN个字节 */
-extern uint16_t g_usb_usart_rx_sta;                         /* 接收状态标记 */
-
 typedef struct {
     uint8_t packet_sent;
     uint8_t packet_receive;
 
-    uint8_t data[USB_CDC_RX_LEN];
-    uint8_t cmd[USB_CDC_CMD_PACKET_SIZE];
+    __ALIGN_BEGIN uint8_t data[USB_CDC_RX_LEN] __ALIGN_END;
+    __ALIGN_BEGIN uint8_t cmd[USB_CDC_CMD_PACKET_SIZE] __ALIGN_END;
 
     uint32_t receive_length;
 
@@ -68,9 +62,5 @@ uint8_t cdc_acm_check_ready(usb_dev *udev);
 void cdc_acm_data_send(usb_dev *udev);
 /* receive CDC ACM data */
 void cdc_acm_data_receive(usb_dev *udev);
-
-void cdc_vcp_data_tx(uint8_t *buf, uint32_t len);
-void cdc_vcp_data_rx(uint8_t *buf, uint32_t len);
-void usb_printf(char* fmt,...); 
 
 #endif /* __CDC_ACM_CORE_H */

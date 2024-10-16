@@ -39,6 +39,9 @@ OF SUCH DAMAGE.
 #include "./SYSTEM/usart/usart.h"
 
 
+extern volatile uint8_t g_device_state;     /* USB连接 情况 */
+
+
 /* local function prototypes ('static') */
 static uint32_t usbd_int_epout                 (usb_core_driver *udev);
 static uint32_t usbd_int_epin                  (usb_core_driver *udev);
@@ -497,6 +500,8 @@ static uint32_t usbd_int_enumfinish (usb_core_driver *udev)
 {
     uint8_t enum_speed = (uint8_t)((udev->regs.dr->DSTAT & DSTAT_ES) >> 1U);
 
+    g_device_state = 1;
+
     udev->regs.dr->DCTL &= ~DCTL_CGINAK;
     udev->regs.dr->DCTL |= DCTL_CGINAK;
 
@@ -530,6 +535,9 @@ static uint32_t usbd_int_suspend (usb_core_driver *udev)
     __IO uint8_t low_power = udev->bp.low_power;
     __IO uint8_t suspend = (uint8_t)(udev->regs.dr->DSTAT & DSTAT_SPST);
     __IO uint8_t is_configured = (udev->dev.cur_status == (uint8_t)USBD_CONFIGURED)? 1U : 0U;
+
+    g_device_state = 0;
+    printf("Device In suspend mode.\r\n");
   
     udev->dev.backup_status = udev->dev.cur_status;
     udev->dev.cur_status = (uint8_t)USBD_SUSPENDED;
@@ -655,6 +663,8 @@ static uint32_t usbd_emptytxfifo_write (usb_core_driver *udev, uint32_t ep_num)
 {
     uint32_t len;
     uint32_t word_count;
+
+    g_device_state = 1; /* 能执行到该函数,说明USB连接成功了 */  
 
     usb_transc *transc = &udev->dev.transc_in[ep_num];
 
